@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <mpi.h>
+#include<stdlib.h>
 #define TAM 12
-#define TAG_SEND_MAX 11
-#define TAG_SEND_MIN 12
+#define TAG_SEND_DIR 11
+#define TAG_SEND_ESQ 12
 
 int vetor[TAM] = {9,8,7,6,5,4,3,2,1,0,-1,-2};
 
@@ -48,17 +49,36 @@ void order_vetor(int *vetor, int inicio, int fim){
 */
 
 
+MPI_Status status;
 
+void split_min(int *vetor, int inicio, int fim,int rank){
 
-void split_min_send(int vetor, int inicio, int fim,int rank){
-    MPI_Send(&vetor[inicio], 1,MPI_INT, rank-1, TAG_SEND_MIN, MPI_COMM_WORLD);
+    while(1){
+        order_vetor(vetor,inicio, fim);    
+        MPI_Send(&vetor[fim-1], 1,MPI_INT, rank+1, TAG_SEND_DIR, MPI_COMM_WORLD);
+        int temp;
+        MPI_Recv(&temp, 1, MPI_INT, rank+1, TAG_SEND_ESQ, MPI_COMM_WORLD, &status);
+        
+        if (temp < vetor[fim-1]) vetor[fim-1] = temp;
+        else break;
+        // fim --;
+
+    }  
 }
 
 
-void split_max_send(int vetor, int inicio, int fim, int rank){}
-
-
-
+void split_max(int *vetor, int inicio, int fim, int rank){
+    while(1){
+        order_vetor(vetor,inicio,fim);
+        int temp;
+        
+        MPI_Recv(&temp, 1, MPI_INT, rank-1, TAG_SEND_DIR, MPI_COMM_WORLD, &status);
+        MPI_Send(&vetor[inicio], 1, MPI_INT, rank-1, TAG_SEND_ESQ, MPI_COMM_WORLD);
+        if (temp > vetor[inicio]) vetor[inicio] = temp;
+        else break;
+        // inicio++;
+    }
+}
 
 int main(int argc, char** argv ){
 
@@ -76,26 +96,61 @@ int main(int argc, char** argv ){
     int rank, size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Status status;
+    int inicio = rank*(TAM/size);
+    int fim = (rank+1)*(TAM/size);
+    int delta = TAM/size;
     
     /*
     ######################################################################################################
     */
-    MPI_Status status;
-    int inicio = rank*(TAM/size);
-    int fim = (rank+1)*(TAM/size);
-
 
     for (int interator_process = 0 ; interator_process < size; interator_process++){
         if (interator_process % 2 == 1){
-            if (rank % 2 == 1)
+            if (rank % 2 == 1){ //rank impar
+                if (rank < size-1)
+                split_min(vetor,inicio,fim, rank);
+            }
+            else {
+                if (rank > 0){
+                    split_max(vetor,inicio,fim,rank);
+                }
+            }
         }
+        else { // interador par
+            if (rank % 2 == 0 ) {
+                if (rank < size-1) split_min(vetor,inicio,fim,rank);
+            }
+            else {//rank impar
+                split_max(vetor,inicio,fim, rank);
+            }
+
+        }
+
 
     }
     
+
+    int *aux = (int*)malloc(sizeof(int)*delta);
+    if (rank==0){
+        for(int i=0; i < size-1;i++){
+            MPI_Recv(aux, delta, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,&status  );
+            int rank_recv = status.MPI_SOURCE;
+            for(int j=0;j < delta;j++) vetor[ j+delta*rank_recv ] = aux[j];
+        }
+    }
+    else {
+        for(int i = inicio; i < fim; i++)aux[i-inicio] = vetor[i];
+        MPI_Send(aux,delta,MPI_INT,0, 15,MPI_COMM_WORLD);
+    }
     
-    
+
+
     MPI_Finalize();
     if (rank ==0 )
-        for (int i=  0 ; i < TAM; i++) printf("%d\n", vetor[i]);
+        for (int i=  0 ; i < TAM; i++) printf("%d  ", vetor[i]);
+        printf("\n");
     return 0;
+
+    // printf()
 }
