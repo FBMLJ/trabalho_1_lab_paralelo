@@ -6,33 +6,60 @@
 
 int vetor[TAM] = {9,8,7,6,5,4,3,2,1,0,-1,-2};
 
-int comparare_exchage(int *vetor,int i, int j){
+/*
+    ##################################################################################################
+
+                                               _                                  
+                                  ___  _ __ __| | ___ _ __   __ _  ___ __ _  ___  
+                                 / _ \| '__/ _` |/ _ \ '_ \ / _` |/ __/ _` |/ _ \ 
+                                | (_) | | | (_| |  __/ | | | (_| | (_| (_| | (_) |
+                                 \___/|_|  \__,_|\___|_| |_|\__,_|\___\__,_|\___/ 
+                                                                                  
+                                     _                                  
+                                 ___(_)_ __   ___ _ __ ___  _ __   __ _ 
+                                / __| | '_ \ / __| '__/ _ \| '_ \ / _` |
+                                \__ \ | | | | (__| | | (_) | | | | (_| |
+                                |___/_|_| |_|\___|_|  \___/|_| |_|\__,_|
+    ##################################################################################################
+                                     
+
+*/
+
+
+
+void comparare_exchage(int *vetor,int i, int j){
     int temp;
     if (vetor[i] > vetor[j]){
         temp = vetor[j];
         vetor[j] = vetor[i];
         vetor[i] = temp;
-        return 1;
     }
-    else return 0;
 }
-
-void split_min(int vetor, int inicio, int fim,int rank){
-    MPI_Send(&vetor[inicio], 1,MPI_INT, rank-1, TAG_SEND_MIN, MPI_COMM_WORLD);
-}
-
-
-void split_max(int vetor, int inicio, int fim, int rank){}
-
-
-
 
 void order_vetor(int *vetor, int inicio, int fim){
     for (int i= inicio ; i < fim; i++)
         for (int j=  i ; j < fim; j++)
             comparare_exchage(vetor,i,j);
-    
 }
+
+/*
+    ##################################################################################################
+
+*/
+
+
+
+
+void split_min_send(int vetor, int inicio, int fim,int rank){
+    MPI_Send(&vetor[inicio], 1,MPI_INT, rank-1, TAG_SEND_MIN, MPI_COMM_WORLD);
+}
+
+
+void split_max_send(int vetor, int inicio, int fim, int rank){}
+
+
+
+
 int main(int argc, char** argv ){
 
 
@@ -66,31 +93,7 @@ int main(int argc, char** argv ){
     }
     
     
-    for (int n = 0 ; n < TAM/size; n++){
-        order_vetor(vetor, inicio,fim);
-            
-        // primeiro processo
-        if (rank == 0){
-            MPI_Send(&vetor[fim-1], 1,MPI_INT, rank+1, TAG_SEND_MAX, MPI_COMM_WORLD);
-            int temp;
-            MPI_Recv(&temp, 1, MPI_INT, rank+1, TAG_SEND_MIN,MPI_COMM_WORLD, &status);
-            vetor[fim-1] = temp;
-        }
-
-        // ultimo processo
-        else{
-            int temp;
-            MPI_Recv(&temp, 1, MPI_INT, rank-1, TAG_SEND_MAX,MPI_COMM_WORLD, &status);
-            MPI_Send(&vetor[inicio], 1,MPI_INT, rank-1, TAG_SEND_MIN, MPI_COMM_WORLD);
-            vetor[inicio] = temp;
-        }
-
-        // for (int i= inicio ; i < fim; i++)
-        //     for (int j=  i ; j < fim; j++)
-        //      comparare_exchage(vetor,i,j);
-       
     
-    }
     MPI_Finalize();
     if (rank ==0 )
         for (int i=  0 ; i < TAM; i++) printf("%d\n", vetor[i]);
