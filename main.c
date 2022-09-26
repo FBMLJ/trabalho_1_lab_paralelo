@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include<stdlib.h>
+#include<math.h>
 #define TAM 1000
 #include<time.h>
 #define TAG_SEND_DIR 11
@@ -147,8 +148,10 @@ int main(int argc, char** argv ){
     /*
     ######################################################################################################
     */
-
-    for (int interator_process = 0 ; interator_process < size; interator_process++){
+    
+    int extra = ceil((float)(TAM % size) / delta);
+    
+    for (int interator_process = 0 ; interator_process < size + extra; interator_process++){
         // printf("TESTE\n");
         if (interator_process % 2 == 1){
             if (rank % 2 == 1){ //rank impar
@@ -199,7 +202,7 @@ int main(int argc, char** argv ){
         clock_t end = clock();
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
  
-        printf("The elapsed time is %f seconds", time_spent);
+        printf("The elapsed time is %f seconds\n", time_spent);
         // printf("%d %d %d\n", rank, inicio, fim);
         FILE * f = fopen("output.txt", "w");
         for (int i=  0 ; i < TAM; i++) fprintf(f, "%d  ", vetor[i]);
