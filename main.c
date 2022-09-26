@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <mpi.h>
 #include<stdlib.h>
-#define TAM 10
+#define TAM 1000
 #include<time.h>
 #define TAG_SEND_DIR 11
 #define TAG_SEND_ESQ 12
