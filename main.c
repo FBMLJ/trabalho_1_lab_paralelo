@@ -35,10 +35,16 @@ void comparare_exchage(int *vetor, int i, int j) {
     }
 }
 
+int compare(const void * a, const void * b)
+{
+    return ( *(int*)a - *(int*)b );
+}
+  
 void order_vetor(int *vetor, int tam) {
-    for (int i = 0 ; i < tam; i++)
-        for (int j = 0; j < tam-1; j++){
-            comparare_exchage(vetor, j, j+1);}
+     qsort(vetor, tam, sizeof(int), compare);
+    // for (int i = 0 ; i < tam; i++)
+    //     for (int j = 0; j < tam-1; j++){
+    //         comparare_exchage(vetor, j, j+1);}
 }
 
 /*
@@ -213,11 +219,15 @@ int main(int argc, char** argv) {
         // tempo de execução
         clock_t end = clock();
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("The elapsed time is %f seconds\n", time_spent);
+        // printf("The elapsed time is %f seconds\n", time_spent);
         // escrevendo resultado no arquivo
         FILE * f = fopen("output.txt", "w");
         for (int i = 0; i < TAM; i++) fprintf(f, "%d  ", vetor[i]);
         free(vetor); fclose(f);
+
+        FILE *f1 = fopen("time_result.csv", "a");
+        fprintf(f1,"%f\n", time_spent);
+        fclose(f1);
     } 
     else {
         MPI_Send(vetor_local, tam, MPI_INT, 0, 0, MPI_COMM_WORLD);
